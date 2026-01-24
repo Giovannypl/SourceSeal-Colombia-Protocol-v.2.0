@@ -1,0 +1,18 @@
+~/workspace$ cat > package.json << 'EOF'
+{
+  "name": "source-seal-colombia",
+  "version": "2.0.0",
+  "description": "SourceSeal Colombia Protocol - Sistema ZKP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["zkp", "honeytoken", "security", "colombia"],
+  "author": "SourceSeal Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
+EOF
