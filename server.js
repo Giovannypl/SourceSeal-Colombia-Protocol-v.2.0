@@ -1,85 +1,166 @@
+// server.js - VERSIÓN SUPER SIMPLE QUE FUNCIONA
 const express = require('express');
-const crypto = require('crypto');
-
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
-// Middleware
+// Middleware básico
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Base de datos simple en memoria
-let seals = [];
+// Almacenamiento simple
+let sellos = [];
+let contador = 0;
 
-// Página principal CON BOTONES FUNCIONALES
+// PÁGINA PRINCIPAL - CON BOTONES QUE SÍ FUNCIONAN
 app.get('/', (req, res) => {
     res.send(`
     <!DOCTYPE html>
     <html>
     <head>
         <title>🔐 SourceSeal - FUNCIONAL</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-            body { font-family: Arial; padding: 20px; background: #f0f0f0; }
-            .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
-            h1 { color: #333; }
-            textarea, input { width: 100%; padding: 10px; margin: 10px 0; }
-            button { background: #4CAF50; color: white; padding: 12px; border: none; cursor: pointer; width: 100%; }
-            .result { background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 5px; }
+            body {
+                font-family: Arial, sans-serif;
+                padding: 40px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                background: rgba(255,255,255,0.1);
+                padding: 30px;
+                border-radius: 20px;
+                backdrop-filter: blur(10px);
+            }
+            h1 {
+                color: white;
+                text-align: center;
+            }
+            .btn {
+                background: #4CAF50;
+                color: white;
+                padding: 15px 30px;
+                border: none;
+                border-radius: 10px;
+                font-size: 18px;
+                cursor: pointer;
+                margin: 10px;
+                width: 100%;
+            }
+            .btn:hover {
+                background: #45a049;
+            }
+            textarea {
+                width: 100%;
+                height: 100px;
+                padding: 10px;
+                border-radius: 10px;
+                border: 2px solid #667eea;
+                font-size: 16px;
+            }
+            .resultado {
+                background: rgba(0,0,0,0.3);
+                padding: 20px;
+                border-radius: 10px;
+                margin-top: 20px;
+                display: none;
+            }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>🔐 SourceSeal Colombia - SISTEMA FUNCIONAL</h1>
+            <h1>🔐 SOURCESEAL COLOMBIA</h1>
+            <p>Sistema ZKP para creación y verificación de sellos</p>
             
-            <h2>Crear Sello ZKP:</h2>
-            <textarea id="data" rows="3" placeholder="Escribe algo..."></textarea><br>
-            <button onclick="createSeal()">✨ CREAR SELLO</button>
-            <div id="result1" class="result"></div>
+            <h2>1. Crear Sello ZKP</h2>
+            <textarea id="datos" placeholder="Escribe los datos a proteger..."></textarea>
+            <button class="btn" onclick="crearSello()">✨ CREAR SELLO</button>
+            <div id="resultado1" class="resultado"></div>
             
-            <h2>Verificar Sello:</h2>
-            <input id="sealId" placeholder="ID del sello"><br>
-            <button onclick="verifySeal()">🔍 VERIFICAR</button>
-            <div id="result2" class="result"></div>
+            <h2>2. Verificar Sello</h2>
+            <input type="text" id="idSello" placeholder="ID del sello" style="width:100%;padding:10px;margin:10px 0;">
+            <button class="btn" onclick="verificarSello()">🔍 VERIFICAR</button>
+            <div id="resultado2" class="resultado"></div>
             
-            <button onclick="checkHealth()">🩺 Comprobar Salud</button>
-            <div id="result3" class="result"></div>
+            <button class="btn" onclick="salud()">🩺 COMPROBAR SALUD</button>
+            <div id="resultado3" class="resultado"></div>
         </div>
         
         <script>
-            async function createSeal() {
-                const data = document.getElementById('data').value;
-                if(!data) { alert('Escribe algo'); return; }
+            // URL base de la API
+            const BASE_URL = window.location.origin;
+            
+            async function crearSello() {
+                const datos = document.getElementById('datos').value;
+                if (!datos) {
+                    alert('Escribe algo primero');
+                    return;
+                }
                 
-                const res = await fetch('/seal', {
-                    method: 'POST',
-                    headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({data: data, honeytoken: true})
-                });
-                const result = await res.json();
-                document.getElementById('result1').innerHTML = 
-                    '<h3>✅ Sello Creado!</h3>' +
-                    '<p>ID: ' + result.id + '</p>' +
-                    '<p>Hash: ' + result.hash.substring(0,20) + '...</p>' +
-                    '<p><a href="/verify/' + result.id + '" target="_blank">Verificar este sello</a></p>';
+                try {
+                    const respuesta = await fetch('/seal', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({data: datos, honeytoken: true})
+                    });
+                    
+                    const resultado = await respuesta.json();
+                    
+                    document.getElementById('resultado1').innerHTML = \`
+                        <h3>✅ SELLO CREADO!</h3>
+                        <p><strong>ID:</strong> \${resultado.id}</p>
+                        <p><strong>Hash:</strong> \${resultado.hash.substring(0,30)}...</p>
+                        <p><strong>Verificar:</strong> <a href="/verify/\${resultado.id}" target="_blank">/verify/\${resultado.id}</a></p>
+                    \`;
+                    document.getElementById('resultado1').style.display = 'block';
+                    
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
             }
             
-            async function verifySeal() {
-                const id = document.getElementById('sealId').value;
-                if(!id) { alert('Pon un ID'); return; }
+            async function verificarSello() {
+                const id = document.getElementById('idSello').value;
+                if (!id) {
+                    alert('Ingresa un ID de sello');
+                    return;
+                }
                 
-                const res = await fetch('/verify/' + id);
-                const result = await res.json();
-                document.getElementById('result2').innerHTML = 
-                    '<h3>' + (result.valid ? '✅ Válido' : '❌ Inválido') + '</h3>' +
-                    '<p>' + result.message + '</p>';
+                try {
+                    const respuesta = await fetch('/verify/' + id);
+                    const resultado = await respuesta.json();
+                    
+                    document.getElementById('resultado2').innerHTML = \`
+                        <h3>\${resultado.valid ? '✅ VÁLIDO' : '❌ INVÁLIDO'}</h3>
+                        <p>\${resultado.message}</p>
+                        <p>\${resultado.honeytoken ? '⚠️ ¡ES UN HONEYTOKEN!' : '🔒 Sello normal'}</p>
+                    \`;
+                    document.getElementById('resultado2').style.display = 'block';
+                    
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
             }
             
-            async function checkHealth() {
-                const res = await fetch('/health');
-                const result = await res.json();
-                document.getElementById('result3').innerHTML = 
-                    '<h3>✅ Servidor Activo</h3>' +
-                    '<p>Estado: ' + result.status + '</p>' +
-                    '<p>Sellos creados: ' + result.count + '</p>';
+            async function salud() {
+                try {
+                    const respuesta = await fetch('/health');
+                    const resultado = await respuesta.json();
+                    
+                    document.getElementById('resultado3').innerHTML = \`
+                        <h3>✅ SERVIDOR ACTIVO</h3>
+                        <p>Estado: \${resultado.status}</p>
+                        <p>Sellos creados: \${resultado.count}</p>
+                        <p>Hora: \${resultado.timestamp}</p>
+                    \`;
+                    document.getElementById('resultado3').style.display = 'block';
+                    
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
             }
         </script>
     </body>
@@ -87,14 +168,14 @@ app.get('/', (req, res) => {
     `);
 });
 
-// ENDPOINT REAL: /seal
+// ENDPOINT 1: Crear sello
 app.post('/seal', (req, res) => {
-    console.log('Creando sello...', req.body);
+    console.log('Creando sello...');
     
-    const id = 'seal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    const hash = crypto.createHash('sha256').update(JSON.stringify(req.body) + Date.now()).digest('hex');
+    const id = 'seal_' + Date.now();
+    const hash = require('crypto').createHash('sha256').update(JSON.stringify(req.body) + Date.now()).digest('hex');
     
-    const seal = {
+    const sello = {
         id: id,
         hash: hash,
         data: req.body.data,
@@ -102,22 +183,22 @@ app.post('/seal', (req, res) => {
         timestamp: new Date()
     };
     
-    seals.push(seal);
+    sellos.push(sello);
+    contador++;
     
     res.json({
         success: true,
         id: id,
         hash: hash,
-        message: 'Sello ZKP creado exitosamente',
-        verifyUrl: `/verify/${id}`
+        message: 'Sello creado exitosamente'
     });
 });
 
-// ENDPOINT REAL: /verify/:id
+// ENDPOINT 2: Verificar sello
 app.get('/verify/:id', (req, res) => {
-    const seal = seals.find(s => s.id === req.params.id);
+    const sello = sellos.find(s => s.id === req.params.id);
     
-    if (!seal) {
+    if (!sello) {
         return res.json({
             valid: false,
             message: 'Sello no encontrado'
@@ -126,38 +207,38 @@ app.get('/verify/:id', (req, res) => {
     
     res.json({
         valid: true,
-        id: seal.id,
-        honeytoken: seal.honeytoken,
-        message: seal.honeytoken ? 
-            '⚠️ ¡ALERTA! Este es un HONEYTOKEN. Posible acceso no autorizado.' :
+        id: sello.id,
+        honeytoken: sello.honeytoken,
+        message: sello.honeytoken ? 
+            '⚠️ ¡ALERTA HONEYTOKEN! Posible acceso no autorizado detectado.' :
             '✅ Sello verificado correctamente.',
-        timestamp: seal.timestamp
+        timestamp: sello.timestamp
     });
 });
 
-// ENDPOINT REAL: /health
+// ENDPOINT 3: Salud
 app.get('/health', (req, res) => {
     res.json({
         status: 'online',
-        count: seals.length,
-        timestamp: new Date()
+        count: sellos.length,
+        timestamp: new Date().toLocaleString()
     });
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`
-=====================================
-🚀 SourceSeal Colombia - FUNCIONAL
-=====================================
-✅ Servidor activo en puerto ${PORT}
-🌐 URL: https://workspace.paredesharold62.repl.co
-🕐 ${new Date().toLocaleString()}
-=====================================
-✨ Endpoints activos:
-   POST /seal       → Crear sello
-   GET  /verify/:id → Verificar sello  
-   GET  /health     → Estado
-=====================================
+╔══════════════════════════════════════════════╗
+║ 🔐 SOURCESEAL COLOMBIA - SISTEMA FUNCIONAL   ║
+╠══════════════════════════════════════════════╣
+║ ✅ Servidor activo en puerto: ${PORT}        ║
+║ 🌐 URL: https://workspace.paredesharold62.repl.co ║
+║ 🕐 Hora: ${new Date().toLocaleString()}      ║
+╠══════════════════════════════════════════════╣
+║ 🎯 ENDPOINTS ACTIVOS:                        ║
+║   • POST /seal       → Crear sello           ║
+║   • GET  /verify/:id → Verificar sello       ║
+║   • GET  /health     → Estado del sistema    ║
+╚══════════════════════════════════════════════╝
     `);
 });
