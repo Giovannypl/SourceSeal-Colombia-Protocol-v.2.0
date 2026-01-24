@@ -1,7 +1,7 @@
 // index.js - VERSIÓN SUPER SIMPLE QUE SÍ FUNCIONA
 const express = require('express');
 const app = express();
-const PORT = 8080; // Replit usa 8080, no 3000
+const PORT = 3000;
 
 // Middleware básico
 app.use(express.json());
