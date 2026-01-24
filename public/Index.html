@@ -1,116 +1,295 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>SourceSeal Colombia V2.0 - Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 SourceSeal Colombia - Generador de Sellos ZKP</title>
     <style>
-        body { font-family: Arial; background: #0f0f0f; color: #00ff00; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
-        .header { text-align: center; padding: 20px; border-bottom: 2px solid #00ff00; }
-        .card { background: #1a1a1a; padding: 20px; margin: 15px 0; border-radius: 10px; }
-        button { background: #00ff00; color: black; padding: 10px 20px; border: none; cursor: pointer; margin: 5px; }
-        pre { background: #2a2a2a; padding: 15px; border-radius: 5px; overflow: auto; }
-        .success { color: #00ff00; }
-        .error { color: #ff5555; }
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #0c2461, #1e3799);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            color: #4bcffa;
+        }
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h2 {
+            color: #0be881;
+            margin-top: 0;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #4bcffa;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 16px;
+            margin-bottom: 15px;
+            resize: vertical;
+        }
+        button {
+            background: linear-gradient(to right, #0be881, #4bcffa);
+            color: #0c2461;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .result {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 5px solid #4bcffa;
+            word-wrap: break-word;
+        }
+        .honeytoken {
+            border-left-color: #ff3f34;
+        }
+        .url {
+            color: #4bcffa;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .alert {
+            background: rgba(255, 63, 52, 0.2);
+            border: 1px solid #ff3f34;
+            color: #ffcccc;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🔐 SourceSeal Colombia Protocol V2.0</h1>
-            <p>Dashboard de Operaciones ZKP</p>
-            <div id="apiStatus">🔴 Conectando...</div>
+        <h1>🔐 SourceSeal Colombia</h1>
+        <p style="text-align: center; font-size: 1.2rem;">Generador de Sellos ZKP y Honeytokens</p>
+
+        <div class="section">
+            <h2>✨ Crear Nuevo Sello ZKP</h2>
+            <p>Introduce los datos que quieres sellar criptográficamente. Opcionalmente, marca como honeytoken para detección de accesos no autorizados.</p>
+            
+            <textarea id="dataInput" rows="5" placeholder="Ejemplo: {'documento': '123456', 'fecha': '2024-01-24', 'usuario': 'ejemplo'}"></textarea>
+            
+            <label style="display: block; margin-bottom: 15px;">
+                <input type="checkbox" id="honeytokenCheckbox">
+                🍯 Marcar como Honeytoken (se alertará cuando sea verificado)
+            </label>
+            
+            <button id="createSealBtn" onclick="createSeal()">✨ Generar Sello ZKP</button>
+            
+            <div id="createResult" class="result" style="display: none;">
+                <h3>✅ Sello Creado Exitosamente</h3>
+                <p><strong>ID del Sello:</strong> <span id="sealId"></span></p>
+                <p><strong>Hash ZKP:</strong> <span id="sealHash"></span></p>
+                <p><strong>URL de Verificación:</strong> <a id="verifyUrl" class="url" target="_blank"></a></p>
+                <button onclick="copyVerifyUrl()">📋 Copiar URL de Verificación</button>
+                <button onclick="openVerifyPage()" style="margin-top: 10px;">🔍 Verificar Ahora</button>
+            </div>
         </div>
-        
-        <div class="card">
+
+        <div class="section">
+            <h2>🔍 Verificar Sello Existente</h2>
+            <p>Pega el ID de un sello para verificar su autenticidad y detectar si es un honeytoken.</p>
+            
+            <input type="text" id="verifyInput" placeholder="ID del sello (UUID)...">
+            <button id="verifySealBtn" onclick="verifySeal()">🔍 Verificar Sello</button>
+            
+            <div id="verifyResult" class="result" style="display: none;">
+                <h3 id="verifyTitle"></h3>
+                <p><strong>Estado:</strong> <span id="verifyStatus"></span></p>
+                <p><strong>Honeytoken:</strong> <span id="honeytokenStatus"></span></p>
+                <p><strong>Fecha de Creación:</strong> <span id="timestamp"></span></p>
+                <p id="verifyMessage"></p>
+            </div>
+        </div>
+
+        <div class="alert">
+            ⚠️ <strong>Información de Seguridad:</strong> Los honeytokens son señuelos que alertan sobre accesos no autorizados. Úsalos en documentos sensibles.
+        </div>
+
+        <div class="section">
             <h2>📊 Estado del Sistema</h2>
-            <button onclick="testAPI()">Probar Conexión</button>
-            <button onclick="getHealth()">Ver Salud</button>
-            <button onclick="getStats()">Estadísticas</button>
-            <pre id="result"></pre>
+            <p>Verifica que el servidor esté funcionando correctamente.</p>
+            <button onclick="checkHealth()">🩺 Comprobar Salud del Servidor</button>
+            <div id="healthResult" class="result" style="display: none;"></div>
         </div>
-        
-        <div class="card">
-            <h2>🛡️ Crear Sello ZKP</h2>
-            <input type="text" id="docName" placeholder="Nombre del documento" style="width:300px;padding:8px;">
-            <input type="text" id="owner" placeholder="Propietario" style="width:200px;padding:8px;">
-            <button onclick="createSeal()">✨ Crear Sello</button>
-            <pre id="sealResult"></pre>
-        </div>
-        
-        <div class="card">
-            <h2>📋 Sellos Existentes</h2>
-            <button onclick="listSeals()">Listar Sellos</button>
-            <button onclick="clearResults()">Limpiar</button>
-            <div id="sealsCount">Cargando...</div>
-            <pre id="sealsList"></pre>
+
+        <div class="footer">
+            <p>🔒 <strong>SourceSeal Colombia Protocol</strong> - Sistema de Verificación Zero-Knowledge Proof (ZKP)</p>
+            <p>📍 <strong>URL Pública:</strong> <span id="currentUrl"></span></p>
+            <p>🔄 Actualizado: <span id="currentDate"></span></p>
         </div>
     </div>
-    
+
     <script>
-        const API_URL = window.location.hostname.includes('repl.co') 
-            ? window.location.origin 
-            : 'http://localhost:3000';
-        
-        async function testAPI() {
+        // Mostrar URL actual y fecha
+        document.getElementById('currentUrl').textContent = window.location.origin;
+        document.getElementById('currentDate').textContent = new Date().toLocaleString();
+
+        async function createSeal() {
+            const btn = document.getElementById('createSealBtn');
+            const dataInput = document.getElementById('dataInput').value;
+            const isHoneytoken = document.getElementById('honeytokenCheckbox').checked;
+
+            if (!dataInput.trim()) {
+                alert('Por favor, introduce datos para crear el sello.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Generando Sello ZKP...';
+
             try {
-                const res = await fetch(API_URL);
-                const data = await res.json();
-                document.getElementById('apiStatus').innerHTML = '🟢 API CONECTADA';
-                document.getElementById('apiStatus').className = 'success';
-                document.getElementById('result').innerHTML = JSON.stringify(data, null, 2);
-            } catch (err) {
-                document.getElementById('apiStatus').innerHTML = '🔴 API NO DISPONIBLE';
-                document.getElementById('apiStatus').className = 'error';
-                document.getElementById('result').innerHTML = 'Error: ' + err.message;
+                const response = await fetch('/seal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        data: dataInput,
+                        userId: 'user_' + Date.now(),
+                        metadata: { isHoneytoken }
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('sealId').textContent = result.sealId;
+                    document.getElementById('sealHash').textContent = result.sealHash;
+                    document.getElementById('verifyUrl').href = result.verifyUrl;
+                    document.getElementById('verifyUrl').textContent = result.verifyUrl;
+                    
+                    const createResult = document.getElementById('createResult');
+                    createResult.style.display = 'block';
+                    if (result.isHoneytoken) {
+                        createResult.classList.add('honeytoken');
+                    }
+                } else {
+                    alert('Error al crear el sello: ' + (result.message || 'Desconocido'));
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✨ Generar Sello ZKP';
             }
         }
-        
-        async function getHealth() {
-            const res = await fetch(API_URL + '/health');
-            const data = await res.json();
-            document.getElementById('result').innerHTML = JSON.stringify(data, null, 2);
+
+        async function verifySeal() {
+            const btn = document.getElementById('verifySealBtn');
+            const sealId = document.getElementById('verifyInput').value.trim();
+
+            if (!sealId) {
+                alert('Por favor, introduce un ID de sello.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Verificando...';
+
+            try {
+                const response = await fetch(`/verify/${sealId}`);
+                const result = await response.json();
+
+                const verifyResult = document.getElementById('verifyResult');
+                verifyResult.style.display = 'block';
+
+                if (result.success) {
+                    document.getElementById('verifyTitle').textContent = '✅ Sello Verificado';
+                    document.getElementById('verifyStatus').textContent = 'Válido';
+                    document.getElementById('honeytokenStatus').textContent = result.isHoneytoken ? '⚠️ SÍ (Honeytoken)' : 'No';
+                    document.getElementById('timestamp').textContent = new Date(result.timestamp).toLocaleString();
+                    document.getElementById('verifyMessage').textContent = result.message;
+
+                    if (result.isHoneytoken) {
+                        verifyResult.classList.add('honeytoken');
+                    }
+                } else {
+                    document.getElementById('verifyTitle').textContent = '❌ Error de Verificación';
+                    document.getElementById('verifyStatus').textContent = 'Inválido';
+                    document.getElementById('honeytokenStatus').textContent = 'N/A';
+                    document.getElementById('timestamp').textContent = 'N/A';
+                    document.getElementById('verifyMessage').textContent = result.message;
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Verificar Sello';
+            }
         }
-        
-        async function getStats() {
-            const res = await fetch(API_URL + '/api/stats');
-            const data = await res.json();
-            document.getElementById('result').innerHTML = JSON.stringify(data, null, 2);
+
+        async function checkHealth() {
+            const response = await fetch('/health');
+            const result = await response.json();
+
+            const healthResult = document.getElementById('healthResult');
+            healthResult.innerHTML = `
+                <p><strong>Estado:</strong> ${result.status}</p>
+                <p><strong>Hora del Servidor:</strong> ${new Date(result.timestamp).toLocaleString()}</p>
+                <p><strong>Sellos Creados:</strong> ${result.sealsCount}</p>
+            `;
+            healthResult.style.display = 'block';
         }
-        
-        async function createSeal() {
-            const doc = document.getElementById('docName').value || 'documento.pdf';
-            const owner = document.getElementById('owner').value || 'Anónimo';
-            
-            const res = await fetch(API_URL + '/seals/new', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    document: doc,
-                    owner: owner,
-                    metadata: { type: 'ZKP_PROOF_1978', country: 'Colombia' }
-                })
+
+        function copyVerifyUrl() {
+            const url = document.getElementById('verifyUrl').href;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('URL copiada al portapapeles');
             });
-            
-            const data = await res.json();
-            document.getElementById('sealResult').innerHTML = JSON.stringify(data, null, 2);
-            listSeals();
         }
-        
-        async function listSeals() {
-            const res = await fetch(API_URL + '/seals');
-            const data = await res.json();
-            document.getElementById('sealsCount').innerHTML = `Total: ${data.count} sellos`;
-            document.getElementById('sealsList').innerHTML = JSON.stringify(data, null, 2);
+
+        function openVerifyPage() {
+            const url = document.getElementById('verifyUrl').href;
+            window.open(url, '_blank');
         }
-        
-        function clearResults() {
-            document.getElementById('result').innerHTML = '';
-            document.getElementById('sealResult').innerHTML = '';
-            document.getElementById('sealsList').innerHTML = '';
-        }
-        
-        // Auto-conectar al cargar
-        testAPI();
     </script>
 </body>
 </html>
