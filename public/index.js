@@ -1,7 +1,7 @@
 // index.js - VERSIÓN SUPER SIMPLE QUE SÍ FUNCIONA
 const express = require('express');
 const app = express();
-const PORT = 3000;
+const PORT = 5000;
 
 // Middleware básico
 app.use(express.json());
