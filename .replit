@@ -14,5 +14,8 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 5173  # Puerto de Vite (frontend)
-externalPort = 3000  # O cualquier número disponible
+localPort = 5173
+externalPort = 8080
+
+[run]
+command = "bash -c 'cd client && npm run dev & cd .. && npm run dev'"
