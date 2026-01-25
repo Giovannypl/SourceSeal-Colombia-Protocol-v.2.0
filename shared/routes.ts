@@ -2,11 +2,13 @@ cat > shared/routes.ts << 'EOF'
 export const api = {
   seals: '/api/seals',
   verify: '/api/verify',
-  // Agrega más rutas según necesites
+  register: '/api/register',
+  content: '/api/content',
+  actions: '/api/actions'
 };
 
 export function buildUrl(endpoint: string, params?: Record<string, string>) {
-  const base = import.meta.env.DEV ? 'http://localhost:5000' : '';
+  const base = window.location.origin.replace('5173', '5000');
   let url = `${base}${endpoint}`;
   
   if (params) {
