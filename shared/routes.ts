@@ -1,4 +1,3 @@
-mkdir -p shared
 cat > shared/routes.ts << 'EOF'
 export const api = {
   seals: '/api/seals',
