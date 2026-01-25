@@ -29,4 +29,4 @@ app.post('/seal', (req, res) => {
     res.json({id, message: 'Sello creado'});
 });
 
-app.listen(3000, () => console.log('✅ Funcionando'));
+app.listen(5000, () => console.log('✅ Funcionando'));
